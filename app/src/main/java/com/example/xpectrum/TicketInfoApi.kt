@@ -76,6 +76,7 @@ suspend fun obtenerTicketInfoPorCodigoVuelo(codigoVuelo: String): TicketInfo? = 
                             precioPEN = obj.optDouble("precioPEN"),
                             tipoPago = obj.optString("tipoPago"),
                             fechaReserva = obj.optString("fechaReserva")
+
                         )
                     }
                 }

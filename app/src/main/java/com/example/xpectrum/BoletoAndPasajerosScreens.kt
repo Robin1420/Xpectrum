@@ -30,6 +30,7 @@ import com.journeyapps.barcodescanner.CaptureActivity
 import com.itextpdf.layout.element.Paragraph
 import com.itextpdf.layout.element.Image
 import com.itextpdf.layout.element.Table
+import android.widget.Toast
 import com.itextpdf.layout.element.Cell
 import com.itextpdf.layout.properties.UnitValue
 import com.itextpdf.layout.properties.VerticalAlignment
@@ -286,13 +287,13 @@ fun BoletoScreen(navController: NavHostController) {
                         .fillMaxWidth()
                         .height(56.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF2A3C4F),
-                        contentColor = Color.White
+                        containerColor = Color.White,
+                        contentColor = Color.Black
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = "Cargar QR desde imagen",
+                        text = "Cargar QR",
                         style = MaterialTheme.typography.titleMedium
                     )
                 }
@@ -328,7 +329,7 @@ fun TicketInfoScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Detalle del Boleto") },
+                title = { Text("Boarding Pass") },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
@@ -347,186 +348,324 @@ fun TicketInfoScreen(
         ) {
             Card(
                 modifier = Modifier.fillMaxWidth().padding(8.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("Nombre: ${nombre ?: "-"}", style = MaterialTheme.typography.titleMedium)
-                    Text("Email: ${email ?: "-"}")
-                    Text("Teléfono: ${telefono ?: "-"}")
-                    Text("Código Vuelo: ${codigoVuelo ?: "-"}")
-                    Text("Salida: ${formatearFecha(fechaSalida) ?: "-"} ${horaSalida?.substringBeforeLast(":") ?: ""}")
-                    Text("Llegada: ${formatearFecha(fechaLlegada) ?: "-"} ${horaLlegada?.substringBeforeLast(":") ?: ""}")
-                    Text("Precio USD: ${precioUSD ?: "-"}")
-                    Text("Precio PEN: ${precioPEN ?: "-"}")
-                    Text("Tipo de Pago: ${tipoPago ?: "-"}")
-                    Text("Fecha Reserva: ${formatearFecha(fechaReserva) ?: "-"}")
-                    Spacer(modifier = Modifier.height(16.dp))
-                    val context = LocalContext.current
-                    var pdfMessage by remember { mutableStateOf("") }
-                    Button(onClick = {
+                    // Información del pasajero
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                            contentDescription = "Pasajero",
+                            modifier = Modifier.size(20.dp).padding(end = 8.dp),
+                            tint = Color(0xFF2A3C4F)
+                        )
+                        Text("${nombre ?: "-"}",
+                            style = MaterialTheme.typography.titleMedium.copy(color = Color.Black))
+                    }
+
+                    // Email
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.email),
+                            contentDescription = "Email",
+                            modifier = Modifier.size(20.dp).padding(end = 8.dp),
+                            tint = Color(0xFF2A3C4F)
+                        )
+                        Text("${email ?: "-"}", color = Color.Black)
+                    }
+
+                    // Teléfono
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.phone),
+                            contentDescription = "Teléfono",
+                            modifier = Modifier.size(20.dp).padding(end = 8.dp),
+                            tint = Color(0xFF2A3C4F)
+                        )
+                        Text("${telefono ?: "-"}", color = Color.Black)
+                    }
+
+                    // Código de vuelo
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.multiple_airports),
+                            contentDescription = "Vuelo",
+                            modifier = Modifier.size(20.dp).padding(end = 8.dp),
+                            tint = Color(0xFF2A3C4F)
+                        )
+                        Text("Vuelo: ${codigoVuelo ?: "-"}", color = Color.Black)
+                    }
+
+                    // Fecha y hora de salida
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.flight_takeoff),
+                            contentDescription = "Salida",
+                            modifier = Modifier.size(20.dp).padding(end = 8.dp),
+                            tint = Color(0xFF2A3C4F)
+                        )
+                        Text("${formatearFecha(fechaSalida) ?: "-"} ${horaSalida?.substringBeforeLast(":") ?: ""}",
+                            color = Color.Black)
+                    }
+
+                    // Fecha y hora de llegada
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.flight_land),
+                            contentDescription = "Llegada",
+                            modifier = Modifier.size(20.dp).padding(end = 8.dp),
+                            tint = Color(0xFF2A3C4F)
+                        )
+                        Text("${formatearFecha(fechaLlegada) ?: "-"} ${horaLlegada?.substringBeforeLast(":") ?: ""}",
+                            color = Color.Black)
+                    }
+
+                    // Precios y tipo de pago
+                    Text("Detalles de pago",
+                        style = MaterialTheme.typography.titleSmall.copy(
+                            color = Color(0xFF2A3C4F),
+                            fontWeight = FontWeight.Bold
+                        ),
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+
+                    precioUSD?.let { usd ->
+                        if (usd > 0) {
+                            Text("Precio: $${String.format("%.2f", usd)}",
+                                color = Color.Black,
+                                modifier = Modifier.padding(start = 28.dp, bottom = 4.dp)
+                            )
+                        }
+                    }
+
+                    precioPEN?.let { pen ->
+                        if (pen > 0) {
+                            Text("Precio: S/.${String.format("%.2f", pen)}",
+                                color = Color.Black,
+                                modifier = Modifier.padding(start = 28.dp, bottom = 4.dp)
+                            )
+                        }
+                    }
+
+                    Text("Tipo de pago: ${tipoPago ?: "-"}",
+                        color = Color.Black,
+                        modifier = Modifier.padding(start = 28.dp, bottom = 4.dp)
+                    )
+
+                    Text("Reservado el: ${formatearFecha(fechaReserva) ?: "-"}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(start = 28.dp, top = 8.dp, bottom = 8.dp)
+                    )
+
+                }
+                // Imagen del código QR grande y centrado dentro de la Card
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ComposeImage(
+                        painter = painterResource(id = R.drawable.verificado),
+                        contentDescription = "Código QR",
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier
+                            .size(220.dp)
+                            .clip(RoundedCornerShape(24.dp))
+                            .background(Color.White)
+                            .padding(8.dp)
+                    )
+                }
+            }
+
+            // Botón de generación de PDF fuera del Card
+            val context = LocalContext.current
+            var pdfMessage by remember { mutableStateOf("") }
+
+            Button(
+                onClick = {
+                    try {
+                        val fileName = "BoardingPass-${nombre}-${codigoVuelo}.pdf"
+                        val downloads = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+                        val file = java.io.File(downloads, fileName)
+                        val outputStream = java.io.FileOutputStream(file)
+                        val writer = com.itextpdf.kernel.pdf.PdfWriter(outputStream)
+                        val pdfDoc = com.itextpdf.kernel.pdf.PdfDocument(writer)
+                        val document = com.itextpdf.layout.Document(pdfDoc)
+
+                        // Fuentes
+                        val bold = com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD)
+                        val normal = com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA)
+
+                        // Logo desde drawable
                         try {
-                            val fileName = "BoardingPass-${nombre}-${codigoVuelo}.pdf"
-                            val downloads = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
-                            val file = java.io.File(downloads, fileName)
-                            val outputStream = java.io.FileOutputStream(file)
-                            val writer = com.itextpdf.kernel.pdf.PdfWriter(outputStream)
-                            val pdfDoc = com.itextpdf.kernel.pdf.PdfDocument(writer)
-                            val document = com.itextpdf.layout.Document(pdfDoc)
+                            // Usar BitmapFactory directamente
+                            // Cargar y ajustar el logo
+                            val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.verificado)
+                            val stream = java.io.ByteArrayOutputStream()
+                            bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, stream)
+                            val logoImageData = com.itextpdf.io.image.ImageDataFactory.create(stream.toByteArray())
 
-                            // Fuentes
-                            val bold = com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA_BOLD)
-                            val normal = com.itextpdf.kernel.font.PdfFontFactory.createFont(com.itextpdf.io.font.constants.StandardFonts.HELVETICA)
+                            // Función para redondear bordes de la imagen
+                            fun getRoundedBitmap(bitmap: Bitmap, pixels: Int): Bitmap {
+                                val output = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
+                                val canvas = Canvas(output)
+                                val color = -0xbdbdbe
+                                val paint = Paint()
+                                val rect = Rect(0, 0, bitmap.width, bitmap.height)
+                                val rectF = RectF(rect)
+                                val roundPx = pixels.toFloat()
 
-                            // Logo desde drawable
-                            try {
-                                // Usar BitmapFactory directamente
-                                // Cargar y ajustar el logo
-                                val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.logo)
-                                val stream = java.io.ByteArrayOutputStream()
-                                bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 100, stream)
-                                val logoImageData = com.itextpdf.io.image.ImageDataFactory.create(stream.toByteArray())
-
-                                // Función para redondear bordes de la imagen
-                                fun getRoundedBitmap(bitmap: Bitmap, pixels: Int): Bitmap {
-                                    val output = Bitmap.createBitmap(bitmap.width, bitmap.height, Bitmap.Config.ARGB_8888)
-                                    val canvas = Canvas(output)
-                                    val color = -0xbdbdbe
-                                    val paint = Paint()
-                                    val rect = Rect(0, 0, bitmap.width, bitmap.height)
-                                    val rectF = RectF(rect)
-                                    val roundPx = pixels.toFloat()
-
-                                    paint.isAntiAlias = true
-                                    canvas.drawARGB(0, 0, 0, 0)
-                                    paint.color = color
-                                    canvas.drawRoundRect(rectF, roundPx, roundPx, paint)
-                                    paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
-                                    canvas.drawBitmap(bitmap, rect, rect, paint)
-                                    return output
-                                }
-
-                                // Aplicar bordes redondeados al logo
-                                val roundedBitmap = getRoundedBitmap(bitmap, 200)
-                                val roundedStream = java.io.ByteArrayOutputStream()
-                                roundedBitmap.compress(Bitmap.CompressFormat.PNG, 100, roundedStream)
-                                val roundedLogoData = com.itextpdf.io.image.ImageDataFactory.create(roundedStream.toByteArray())
-
-                                // Crear el logo con posición absoluta
-                                val pageSize = pdfDoc.defaultPageSize
-                                val logoWidth = 300f  // Ancho del logo
-                                val logoImage = Image(roundedLogoData)
-                                    .setWidth(logoWidth)
-                                    .setFixedPosition(
-                                        pageSize.width - logoWidth - 50f,  // Posición X (desde la izquierda)
-                                        pageSize.height - 350f,  // Posición Y (desde abajo)
-                                        logoWidth  // Ancho
-                                    )
-
-                                // Agregar el logo al documento
-                                document.add(logoImage)
-
-                                // Agregar el título debajo del logo
-                                val titleParagraph = Paragraph("XPECTRUM")
-                                    .setFont(bold)
-                                    .setFontSize(28f)
-                                    .setFontColor(com.itextpdf.kernel.colors.ColorConstants.BLACK)
-                                    .setMarginTop(20f)  // Espacio después del logo
-
-                                val subtitleParagraph = Paragraph("Operated by Expectrum Peru")
-                                    .setFont(normal)
-                                    .setFontSize(10f)
-                                    .setMarginBottom(20f)
-
-                                document.add(titleParagraph)
-                                document.add(subtitleParagraph)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                // Si falla, mostrar solo el texto
-                                document.add(Paragraph("XPECTRUM")
-                                    .setFont(bold)
-                                    .setFontSize(28f)
-                                    .setFontColor(com.itextpdf.kernel.colors.ColorConstants.BLUE))
-                                document.add(Paragraph("Operated by Expectrum Peru")
-                                    .setFont(normal)
-                                    .setFontSize(10f))
+                                paint.isAntiAlias = true
+                                canvas.drawARGB(0, 0, 0, 0)
+                                paint.color = color
+                                canvas.drawRoundRect(rectF, roundPx, roundPx, paint)
+                                paint.xfermode = PorterDuffXfermode(PorterDuff.Mode.SRC_IN)
+                                canvas.drawBitmap(bitmap, rect, rect, paint)
+                                return output
                             }
 
-                            // Encabezado y recuadro principal
-                            document.add(Paragraph("Pase de abordar").setFont(bold).setFontSize(16f))
-                            document.add(Paragraph("Online boarding pass").setFont(normal))
-                            document.add(Paragraph("\n"))
+                            // Aplicar bordes redondeados al logo
+                            val roundedBitmap = getRoundedBitmap(bitmap, 200)
+                            val roundedStream = java.io.ByteArrayOutputStream()
+                            roundedBitmap.compress(Bitmap.CompressFormat.PNG, 100, roundedStream)
+                            val roundedLogoData = com.itextpdf.io.image.ImageDataFactory.create(roundedStream.toByteArray())
 
-                            document.add(Paragraph("Nombre de pasajero/Name of passenger").setFont(normal).setFontSize(10f))
-                            val nombrePasajero = nombre ?: "-"
-                            document.add(Paragraph(nombrePasajero.uppercase()).setFont(bold).setFontSize(12f))
-                            val vuelo = codigoVuelo ?: "-"
-                            val asiento = "6C" // Puedes parametrizar si tienes el dato
-                            val grupo = "4" // Puedes parametrizar si tienes el dato
-                            val booking = "W6LTWP 2017-07-13" // Puedes parametrizar si tienes el dato
-                            val origen = "LIMA" // Parametriza si tienes el dato
-                            val aeropuerto = "NUEVO AEROPUERTO INTERNACIONAL JORGE CHAVEZ" // Parametriza si tienes el dato
-                            val fechaSalidaStr = fechaSalida ?: "-"
-                            val horaSalidaStr = horaSalida ?: "-"
-                            val fechaReservaStr = fechaReserva ?: "-"
-                            val fechaLlegadaStr = fechaLlegada ?: "-"
-                            val horaLlegadaStr = horaLlegada ?: "-"
-                            val precioUSDStr = precioUSD?.toString() ?: "-"
-                            val precioPENStr = precioPEN?.toString() ?: "-"
-                            val tipoPagoStr = tipoPago ?: "-"
-                            document.add(Paragraph("Vuelo No./Flight #: $vuelo").setFont(bold).setFontSize(12f))
-                            document.add(Paragraph("Grupo de abordaje: $grupo").setFont(normal).setFontSize(10f))
-                            document.add(Paragraph("Seat: $asiento").setFont(normal).setFontSize(10f))
-                            document.add(Paragraph("Booking: $booking").setFont(normal).setFontSize(10f))
-                            document.add(Paragraph("\n"))
+                            // Crear el logo con posición absoluta
+                            val pageSize = pdfDoc.defaultPageSize
+                            val logoWidth = 300f  // Ancho del logo
+                            val logoImage = Image(roundedLogoData)
+                                .setWidth(logoWidth)
+                                .setFixedPosition(
+                                    pageSize.width - logoWidth - 50f,  // Posición X (desde la izquierda)
+                                    pageSize.height - 350f,  // Posición Y (desde abajo)
+                                    logoWidth  // Ancho
+                                )
+
+                            // Agregar el logo al documento
+                            document.add(logoImage)
+
+                            // Agregar el título debajo del logo
+                            val titleParagraph = Paragraph("XPECTRUM")
+                                .setFont(bold)
+                                .setFontSize(28f)
+                                .setFontColor(com.itextpdf.kernel.colors.ColorConstants.BLACK)
+                                .setMarginTop(20f)  // Espacio después del logo
+
+                            val subtitleParagraph = Paragraph("Operated by Expectrum Peru")
+                                .setFont(normal)
+                                .setFontSize(10f)
+                                .setMarginBottom(20f)
+
+                            document.add(titleParagraph)
+                            document.add(subtitleParagraph)
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            // Si falla, mostrar solo el texto
+                            document.add(Paragraph("XPECTRUM")
+                                .setFont(bold)
+                                .setFontSize(28f)
+                                .setFontColor(com.itextpdf.kernel.colors.ColorConstants.BLUE))
+                            document.add(Paragraph("Operated by Expectrum Peru")
+                                .setFont(normal)
+                                .setFontSize(10f))
+                        }
+
+                        // Encabezado y recuadro principal
+                        document.add(Paragraph("Boarding Pass").setFont(bold).setFontSize(16f))
+                        document.add(Paragraph("Online boarding pass").setFont(normal))
+                        document.add(Paragraph("\n"))
+
+                        document.add(Paragraph("Nombre de pasajero/Name of passenger").setFont(normal).setFontSize(10f))
+                        val nombrePasajero = nombre ?: "-"
+                        document.add(Paragraph(nombrePasajero.uppercase()).setFont(bold).setFontSize(12f))
+                        val vuelo = codigoVuelo ?: "-"
+                        val asiento = "6C" // Puedes parametrizar si tienes el dato
+                        val grupo = "4" // Puedes parametrizar si tienes el dato
+                        val booking = "W6LTWP 2017-07-13" // Puedes parametrizar si tienes el dato
+                        val origen = "LIMA" // Parametriza si tienes el dato
+                        val aeropuerto = "NUEVO AEROPUERTO INTERNACIONAL JORGE CHAVEZ" // Parametriza si tienes el dato
+                        val fechaSalidaStr = fechaSalida ?: "-"
+                        val horaSalidaStr = horaSalida ?: "-"
+                        val fechaReservaStr = fechaReserva ?: "-"
+                        val fechaLlegadaStr = fechaLlegada ?: "-"
+                        val horaLlegadaStr = horaLlegada ?: "-"
+                        val precioUSDStr = precioUSD?.toString() ?: "-"
+                        val precioPENStr = precioPEN?.toString() ?: "-"
+                        val tipoPagoStr = tipoPago ?: "-"
+                        document.add(Paragraph("Vuelo No./Flight #: $vuelo").setFont(bold).setFontSize(12f))
+                        document.add(Paragraph("Grupo de abordaje: $grupo").setFont(normal).setFontSize(10f))
+                        document.add(Paragraph("Seat: $asiento").setFont(normal).setFontSize(10f))
+                        document.add(Paragraph("Booking: $booking").setFont(normal).setFontSize(10f))
+                        document.add(Paragraph("\n"))
 
 // Código de barras (booking)
-                            val barcodeFormat = com.google.zxing.BarcodeFormat.CODE_128
-                            val bitMatrix = com.google.zxing.MultiFormatWriter().encode(booking, barcodeFormat, 300, 80)
-                            val width = bitMatrix.width
-                            val height = bitMatrix.height
-                            val pixels = IntArray(width * height)
-                            for (y in 0 until height) {
-                                for (x in 0 until width) {
-                                    pixels[y * width + x] = if (bitMatrix.get(x, y)) android.graphics.Color.BLACK else android.graphics.Color.WHITE
-                                }
+                        val barcodeFormat = com.google.zxing.BarcodeFormat.CODE_128
+                        val bitMatrix = com.google.zxing.MultiFormatWriter().encode(booking, barcodeFormat, 300, 80)
+                        val width = bitMatrix.width
+                        val height = bitMatrix.height
+                        val pixels = IntArray(width * height)
+                        for (y in 0 until height) {
+                            for (x in 0 until width) {
+                                pixels[y * width + x] = if (bitMatrix.get(x, y)) android.graphics.Color.BLACK else android.graphics.Color.WHITE
                             }
-                            val bmp = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888)
-                            bmp.setPixels(pixels, 0, width, 0, 0, width, height)
-                            val stream = java.io.ByteArrayOutputStream()
-                            bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
-                            val imageData = com.itextpdf.io.image.ImageDataFactory.create(stream.toByteArray())
-                            document.add(Image(imageData).setWidth(200f).setHeight(50f))
+                        }
+                        val bmp = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888)
+                        bmp.setPixels(pixels, 0, width, 0, 0, width, height)
+                        val stream = java.io.ByteArrayOutputStream()
+                        bmp.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
+                        val imageData = com.itextpdf.io.image.ImageDataFactory.create(stream.toByteArray())
+                        document.add(Image(imageData).setWidth(200f).setHeight(50f))
 
 // Formatear la fecha para el PDF
-                            val fechaSalidaFormateada = formatearFecha(fechaSalidaStr) ?: ""
-                            val fechaLlegadaFormateada = formatearFecha(fechaLlegadaStr) ?:""
-                            val horaSalidaCorta = horaSalidaStr?.substringBeforeLast(":") ?: ""
-                            val horaLlegadaCorta = horaLlegadaStr?.substringBeforeLast(":") ?: ""
+                        val fechaSalidaFormateada = formatearFecha(fechaSalidaStr) ?: ""
+                        val fechaLlegadaFormateada = formatearFecha(fechaLlegadaStr) ?:""
+                        val horaSalidaCorta = horaSalidaStr?.substringBeforeLast(":") ?: ""
+                        val horaLlegadaCorta = horaLlegadaStr?.substringBeforeLast(":") ?: ""
 
-                            document.add(Paragraph("$origen - $aeropuerto").setFont(bold).setFontSize(20f))
-                            document.add(Paragraph("\n"))
-                            document.add(Paragraph("Salida: $fechaSalidaFormateada $horaSalidaCorta").setFont(bold).setFontSize(14f))
-                            document.add(Paragraph("Llegada: $fechaLlegadaFormateada $horaLlegadaCorta").setFont(bold).setFontSize(14f))
-                            document.add(Paragraph("\n"))
+                        document.add(Paragraph("$origen - $aeropuerto").setFont(bold).setFontSize(20f))
+                        document.add(Paragraph("\n"))
+                        document.add(Paragraph("Salida: $fechaSalidaFormateada $horaSalidaCorta").setFont(bold).setFontSize(14f))
+                        document.add(Paragraph("Llegada: $fechaLlegadaFormateada $horaLlegadaCorta").setFont(bold).setFontSize(14f))
+                        document.add(Paragraph("\n"))
 
-                            document.add(Paragraph("Recuerda que el artículo personal permitido sin costo por Viva Air es una única pieza de máximo 6 kg y 40x35x25 cm. Exceder las medidas o peso tendrá un costo adicional.").setFont(normal).setFontSize(8f))
-                            document.add(Paragraph("\nAcércate al counter para reclamar el pase de abordar y entregar el equipaje, está disponible entre 2 horas y 45 minutos antes de la salida programada para vuelos nacionales. Todos los pasajeros deben presentarse en la sala de espera a más tardar 45 minutos antes de la salida programada del vuelo.").setFont(normal).setFontSize(8f))
-                            document.add(Paragraph("\nEl equipaje en cabina, y en general cualquier pieza, que exceda los 55x45x25 cm y 12 kg, deberá ser entregado en el counter de Viva Air antes de ingresar a la espera y dentro de los tiempos mencionados en el punto anterior.").setFont(normal).setFontSize(8f))
-                            document.add(Paragraph("\n#YoSoyXPECTRUM").setFont(bold).setFontSize(12f))
+                        document.add(Paragraph("Recuerda que el artículo personal permitido sin costo por Viva Air es una única pieza de máximo 6 kg y 40x35x25 cm. Exceder las medidas o peso tendrá un costo adicional.").setFont(normal).setFontSize(8f))
+                        document.add(Paragraph("\nAcércate al counter para reclamar el pase de abordar y entregar el equipaje, está disponible entre 2 horas y 45 minutos antes de la salida programada para vuelos nacionales. Todos los pasajeros deben presentarse en la sala de espera a más tardar 45 minutos antes de la salida programada del vuelo.").setFont(normal).setFontSize(8f))
+                        document.add(Paragraph("\nEl equipaje en cabina, y en general cualquier pieza, que exceda los 55x45x25 cm y 12 kg, deberá ser entregado en el counter de Viva Air antes de ingresar a la espera y dentro de los tiempos mencionados en el punto anterior.").setFont(normal).setFontSize(8f))
+                        document.add(Paragraph("\n#YoSoyXPECTRUM").setFont(bold).setFontSize(12f))
 
-                            document.close()
-                            pdfMessage = "PDF guardado en Descargas: $fileName"
-                        } catch (e: Exception) {
-                            pdfMessage = "Error al generar PDF: ${e.message}"
-                        }
-                    }) {
-                        Text("Descargar PDF")
+                        document.close()
+                        pdfMessage = "$fileName Guardado"
+                        Toast.makeText(context, pdfMessage, Toast.LENGTH_LONG).show()
+                    } catch (e: Exception) {
+                        pdfMessage = "Error al generar PDF: ${e.message}"
+                        Toast.makeText(context, pdfMessage, Toast.LENGTH_LONG).show()
                     }
-                    if (pdfMessage.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(pdfMessage, color = MaterialTheme.colorScheme.primary)
-                    }
-                }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(0xFF2A3C4F),  // Color #2A3C4F
+                    contentColor = Color.White
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = "DESCARGAR BOARDING PASS",
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
+
+            if (pdfMessage.isNotBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = pdfMessage,
+                    color = if (pdfMessage.startsWith("Error")) Color.Red else Color.Green,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
             }
         }
     }
@@ -535,24 +674,38 @@ fun TicketInfoScreen(
 // Composable para mostrar los datos del ticket
 @Composable
 fun TicketInfoResult(ticket: TicketInfo) {
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    Column(
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text("Nombre: ${ticket.nombre}", style = MaterialTheme.typography.titleMedium)
-            Text("Email: ${ticket.email}")
-            Text("Teléfono: ${ticket.telefono}")
-            Text("Código Vuelo: ${ticket.codigoVuelo}")
-            Text("Fecha Reserva: ${ticket.fechaReserva ?: "-"}")
-            Text("Fecha Salida: ${ticket.fechaSalida ?: "-"}")
-            Text("Hora Salida: ${ticket.horaSalida ?: "-"}")
-            Text("Fecha Llegada: ${ticket.fechaLlegada ?: "-"}")
-            Text("Hora Llegada: ${ticket.horaLlegada ?: "-"}")
-            Text("Precio USD: ${ticket.precioUSD ?: "-"}")
-            Text("Precio PEN: ${ticket.precioPEN ?: "-"}")
-            Text("Tipo de Pago: ${ticket.tipoPago ?: "-"}")
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(8.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Nombre: ${ticket.nombre}", style = MaterialTheme.typography.titleMedium)
+                Text("Email: ${ticket.email}")
+                Text("Teléfono: ${ticket.telefono}")
+                Text("Código Vuelo: ${ticket.codigoVuelo}")
+                Text("Fecha Reserva: ${ticket.fechaReserva ?: "-"}")
+                Text("Fecha Salida: ${ticket.fechaSalida ?: "-"}")
+                Text("Hora Salida: ${ticket.horaSalida ?: "-"}")
+                Text("Fecha Llegada: ${ticket.fechaLlegada ?: "-"}")
+                Text("Hora Llegada: ${ticket.horaLlegada ?: "-"}")
+                Text("Precio USD: ${ticket.precioUSD ?: "-"}")
+                Text("Precio PEN: ${ticket.precioPEN ?: "-"}")
+                Text("Tipo de Pago: ${ticket.tipoPago ?: "-"}")
+            }
+
         }
+
     }
 }
 

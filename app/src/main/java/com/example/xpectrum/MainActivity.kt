@@ -1,11 +1,13 @@
 package com.example.xpectrum
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -14,36 +16,35 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.platform.LocalContext
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.NavHostController
-import android.os.Build.VERSION.SDK_INT
-import android.content.Context
-import coil.compose.AsyncImage
+import coil.ImageLoader
 import coil.compose.rememberAsyncImagePainter
-import coil.compose.rememberImagePainter
+import coil.decode.GifDecoder
+import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 import com.example.xpectrum.ui.theme.XpectrumTheme
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-// Importar BoletoScreen
+// Importar BoletoScreen y pantallas de pasajeros y ticket info
 import com.example.xpectrum.BoletoScreen
+import com.example.xpectrum.TicketInfoScreen
 
 // Actividad principal de la app
 class MainActivity : ComponentActivity() {
@@ -66,7 +67,7 @@ class MainActivity : ComponentActivity() {
                     // Pantalla de pasajeros por código de vuelo
                     composable("pasajeros/{codigoVuelo}") { backStackEntry ->
                         val codigoVuelo = backStackEntry.arguments?.getString("codigoVuelo") ?: ""
-                        PasajerosScreen(navController, codigoVuelo)
+                        ( codigoVuelo)
                     }
                     // Pantalla de detalle de boleto
                     composable(
@@ -220,13 +221,13 @@ fun ListaVuelosScreen(navController: NavHostController) {
                         .fillMaxWidth()
                         .height(56.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFFFFFF),  // Color #FFFFFFFF
-                        contentColor = Color(0xFF000000)
+                        containerColor = Color(0xFF2A3C4F),  // Color #2A3C4F
+                        contentColor = Color.White
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Text(
-                        text = "Boleto",
+                        text = "Continuar",
                         style = MaterialTheme.typography.titleMedium
                     )
                 }
@@ -285,14 +286,31 @@ fun ListaVuelosScreen(navController: NavHostController) {
                             .height(200.dp)
                             .padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
-                        // Cargar y mostrar el GIF local usando Coil
-                        AsyncImage(
-                            model = R.drawable.vuelos,
+                        // Cargar y mostrar el GIF local usando Coil con soporte para GIF
+                        val context = LocalContext.current
+                        val imageLoader = ImageLoader.Builder(context)
+                            .components {
+                                if (Build.VERSION.SDK_INT >= 28) {
+                                    add(ImageDecoderDecoder.Factory())
+                                } else {
+                                    add(GifDecoder.Factory())
+                                }
+                            }
+                            .build()
+                            
+                        Image(
+                            painter = rememberAsyncImagePainter(
+                                ImageRequest.Builder(context)
+                                    .data(R.drawable.vuelos)
+                                    .decoderFactory(GifDecoder.Factory())
+                                    .build(),
+                                imageLoader = imageLoader
+                            ),
                             contentDescription = "Animación de avión volando",
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .fillMaxSize()
-                                .clip(RoundedCornerShape(16.dp)),
+                                .clip(RoundedCornerShape(16.dp))
                         )
                         // Superponer un degradado oscuro para mejor legibilidad del texto
                         Box(
@@ -461,7 +479,7 @@ fun VueloItem(vuelo: Vuelo) {
 
 
 // Vista previa para la pantalla de bienvenida (solo para diseño en el IDE)
-@Preview(showBackground = true)
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
 @Composable
 fun BienvenidaPreview() {
     XpectrumTheme {
