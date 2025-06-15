@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.google.zxing.integration.android.IntentIntegrator
 import com.journeyapps.barcodescanner.CaptureActivity
+import android.content.pm.ActivityInfo
 import com.itextpdf.layout.element.Paragraph
 import com.itextpdf.layout.element.Image
 import com.itextpdf.layout.element.Table
@@ -261,8 +262,12 @@ fun BoletoScreen(navController: NavHostController) {
                     onClick = {
                         activity?.let {
                             val integrator = IntentIntegrator(activity)
-                            integrator.setOrientationLocked(false)
-                            integrator.setPrompt("Escanea el código QR del boleto")
+                            integrator.setPrompt("Escanea el código QR de tu boleto")
+                            integrator.setBeepEnabled(false)
+                            integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
+                            integrator.setBarcodeImageEnabled(false)
+                            integrator.setOrientationLocked(true)
+                            integrator.setCaptureActivity(PortraitCaptureActivity::class.java)
                             qrScanLauncher.launch(integrator.createScanIntent())
                         }
                     },
